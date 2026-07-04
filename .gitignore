@@ -1,0 +1,51 @@
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS
+.DS_Store
+
+# VS Code
+.vscode/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ChromaDB local database
+chroma_db/
+chroma/
+.chroma/
+
+# LangChain / LangSmith local files
+.langchain/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Streamlit local secrets
+.streamlit/secrets.toml
+
+# Build files
+build/
+dist/
+*.egg-info/
+
+# Test and cache files
+.pytest_cache/
+.mypy_cache/
+.cache/

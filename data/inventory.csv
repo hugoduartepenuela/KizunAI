@@ -1,0 +1,6 @@
+sku,product_name,english_name,tcg,set_name,card_number,language,rarity,condition,raw_or_slab,grade,quantity,cost,selling_price,image_path,date_added
+MEGGENEXRAW001,メガゲンガーex,Mega Gengar ex,Pokemon,Unknown,240/193,Japanese,SAR,Near Mint,Raw,,1,700.0,1000.0,data/card_images/MEGGENEXRAW001.jpg,2026-06-23 19:58:46
+MARPIKPSA9-01,マリオピカチュウ,Mario Pikachu,Pokemon,XY PROMO,294,Japanese,Promo,Near Mint,PSA,9,1,39000.0,43000.0,data/card_images/MARPIKPSA9-01.jpg,2026-06-24 19:00:44
+MEWANCRAW001,Mew Ancient,Mew Ancient,Pokemon,Unknown,Unknown,Unknown,Unknown,Near Mint,Raw,,1,0.0,680.0,data/card_images/MEWANCRAW001.jpg,2026-07-04 11:29:03
+DRAGAMRAW001,カイリュー,Dragonite Gameboy,Pokemon,Unknown,Unknown,Japanese,Unknown,Near Mint,Raw,,1,0.0,680.0,data/card_images/DRAGAMRAW001.jpg,2026-07-04 11:30:13
+RORZORRAW001,ロロノア・ゾロ,Roronoa Zoro,One Piece,Unknown,OP06-118,Japanese,Unknown,Near Mint,Raw,,1,0.0,3900.0,data/card_images/RORZORRAW001.jpg,2026-07-04 11:33:28
