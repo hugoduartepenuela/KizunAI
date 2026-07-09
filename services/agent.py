@@ -62,6 +62,47 @@ def sku_tool_func(query):
 
     return f"Generated SKU: {sku}"
 
+def currency_tool_func(query):
+    """
+    Expected format:
+    AMOUNT | FROM CURRENCY | TO CURRENCY
+
+    Examples:
+    5000 | EUR | AED
+    430000 | JPY | AED
+    1000 | USD | EUR
+    """
+
+    parts = [part.strip() for part in query.split("|")]
+
+    if len(parts) != 3:
+        return (
+            "Invalid currency conversion format. "
+            "Use: AMOUNT | FROM CURRENCY | TO CURRENCY"
+        )
+
+    amount = parts[0]
+    from_currency = parts[1]
+    to_currency = parts[2]
+
+    try:
+        result = convert_currency(
+            amount=amount,
+            from_currency=from_currency,
+            to_currency=to_currency
+        )
+
+        return (
+            f"{result['amount']:,.2f} "
+            f"{result['from_currency']} = "
+            f"{result['converted_amount']:,.2f} "
+            f"{result['to_currency']}. "
+            f"Exchange rate: {result['rate']}. "
+            f"Rate date: {result['date']}."
+        )
+
+    except Exception as error:
+        return f"Currency conversion failed: {str(error)}"
 
 inventory_tool = Tool(
     name="Inventory Search",
@@ -112,7 +153,26 @@ llm = ChatOpenAI(
     temperature=0
 )
 
+currency_tool = Tool(
+    name="Currency Converter",
+    func=currency_tool_func,
+    description="""
+    Use this tool when the user asks to convert money,
+    prices, costs or values between currencies.
 
+    The tool input MUST use this exact format:
+
+    AMOUNT | FROM CURRENCY | TO CURRENCY
+
+    Use ISO currency codes.
+
+    Examples:
+
+    5000 | EUR | AED
+    430000 | JPY | AED
+    1000 | USD | EUR
+    """
+)
 def create_kizunai_agent():
 
     memory = ConversationBufferMemory(
@@ -124,7 +184,8 @@ def create_kizunai_agent():
         tools=[
             inventory_tool,
             youtube_tool,
-            sku_tool
+            sku_tool,
+            currency_tool
         ],
         llm=llm,
         agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
@@ -170,6 +231,15 @@ IMPORTANT CONVERSATION RULES:
 - Never invent inventory data.
 
 - Be concise, clear and business-focused.
+
+- Use Currency Converter when the user asks to convert
+  money, prices, costs or values between currencies.
+
+- When using Currency Converter, format the tool input as:
+  AMOUNT | FROM CURRENCY | TO CURRENCY
+
+- Always use ISO currency codes such as:
+  AED, EUR, USD, JPY, GBP.
 """
         }
     )
