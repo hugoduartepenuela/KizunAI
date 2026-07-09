@@ -1,3 +1,4 @@
+```mermaid
 flowchart TD
 
 A[User] --> B[Streamlit Web App]
@@ -32,7 +33,8 @@ I --> T[Conversation Memory]
 I --> U[LangSmith Observability]
 U --> V[Agent Traces]
 U --> W[Tool Selection]
-U --> X[Token / Cost / Latency Tracking]
+U --> X[Token Cost and Latency Tracking]
+```
 
 ## KizunAI Architecture
 
