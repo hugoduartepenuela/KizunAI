@@ -6,6 +6,7 @@ from langchain_openai import ChatOpenAI
 
 from services.inventory_ai import answer_inventory_question
 from services.youtube_rag import ask_video
+from services.sku_generator import generate_sku
 
 
 CURRENT_VIDEO_URL = ""
@@ -37,6 +38,31 @@ def youtube_tool_func(query):
     )
 
 
+def sku_tool_func(query):
+    """
+    Parse a simple SKU generation request.
+
+    Expected examples:
+    Mario Pikachu | Raw
+    Charizard | PSA | 10
+    Umbreon VMAX | BGS | 9.5
+    """
+
+    parts = [part.strip() for part in query.split("|")]
+
+    product_name = parts[0] if len(parts) > 0 else "UNKNOWN"
+    raw_or_slab = parts[1] if len(parts) > 1 else "Raw"
+    grade = parts[2] if len(parts) > 2 else None
+
+    sku = generate_sku(
+        product_name=product_name,
+        raw_or_slab=raw_or_slab,
+        grade=grade
+    )
+
+    return f"Generated SKU: {sku}"
+
+
 inventory_tool = Tool(
     name="Inventory Search",
     func=inventory_tool_func,
@@ -58,6 +84,29 @@ youtube_tool = Tool(
 )
 
 
+sku_tool = Tool(
+    name="SKU Generator",
+    func=sku_tool_func,
+    description="""
+    Use this tool when the user asks to generate, create,
+    preview or suggest a SKU for a TCG product.
+
+    The tool input MUST use this exact format:
+
+    PRODUCT NAME | RAW OR GRADING COMPANY | GRADE
+
+    Examples:
+
+    Mario Pikachu | Raw
+    Charizard | PSA | 10
+    Umbreon VMAX | BGS | 9.5
+
+    For raw cards, use:
+    PRODUCT NAME | Raw
+    """
+)
+
+
 llm = ChatOpenAI(
     model="gpt-4.1-mini",
     temperature=0
@@ -74,7 +123,8 @@ def create_kizunai_agent():
     agent = initialize_agent(
         tools=[
             inventory_tool,
-            youtube_tool
+            youtube_tool,
+            sku_tool
         ],
         llm=llm,
         agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
@@ -85,8 +135,9 @@ def create_kizunai_agent():
             "prefix": """
 You are KizunAI, the AI assistant for Umami Vault.
 
-You help manage and analyze Trading Card Game inventory
-and answer questions about processed YouTube videos.
+You help manage and analyze Trading Card Game inventory,
+answer questions about processed YouTube videos,
+and generate inventory SKUs.
 
 You have access to specialized tools.
 
@@ -109,6 +160,12 @@ IMPORTANT CONVERSATION RULES:
 - Use Inventory Search for inventory questions.
 
 - Use YouTube Knowledge for processed video questions.
+
+- Use SKU Generator when the user asks to generate,
+  create, preview or suggest a SKU.
+
+- When using SKU Generator, format the tool input as:
+  PRODUCT NAME | RAW OR GRADING COMPANY | GRADE
 
 - Never invent inventory data.
 
