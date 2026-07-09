@@ -63,6 +63,7 @@ st.markdown(
         border: 1px solid rgba(145, 164, 255, 0.18);
         background: rgba(18, 25, 45, 0.72);
         min-height: 126px;
+        margin-bottom: 1rem;
     }
 
     .metric-label {
@@ -98,20 +99,6 @@ st.markdown(
     .section-text {
         color: #aab4d4;
         margin-bottom: 1rem;
-    }
-
-    .chart-card {
-        padding: 1.2rem;
-        border-radius: 18px;
-        border: 1px solid rgba(145, 164, 255, 0.16);
-        background: rgba(18, 25, 45, 0.55);
-        min-height: 320px;
-    }
-
-    .chart-title {
-        color: #f7f8ff;
-        font-weight: 850;
-        margin-bottom: 0.8rem;
     }
     </style>
     """,
@@ -153,7 +140,16 @@ try:
     total_profit = calculate_portfolio_profit()
     portfolio_margin = calculate_portfolio_margin()
 
-    st.markdown('<div class="section-title">Portfolio Overview</div>', unsafe_allow_html=True)
+    df["inventory_value"] = df["selling_price"] * df["quantity"]
+    df["potential_profit"] = (
+        (df["selling_price"] - df["cost"]) * df["quantity"]
+    )
+
+    st.markdown(
+        '<div class="section-title">Portfolio Overview</div>',
+        unsafe_allow_html=True
+    )
+
     st.markdown(
         '<div class="section-text">A financial snapshot of your current saved inventory.</div>',
         unsafe_allow_html=True
@@ -197,8 +193,6 @@ try:
             unsafe_allow_html=True
         )
 
-    st.write("")
-
     col4, col5, col6 = st.columns(3)
 
     with col4:
@@ -237,18 +231,31 @@ try:
             unsafe_allow_html=True
         )
 
-    st.markdown('<div class="section-title">Portfolio Distribution</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">Portfolio Distribution</div>',
+        unsafe_allow_html=True
+    )
+
     st.markdown(
         '<div class="section-text">Understand where portfolio value and units are concentrated.</div>',
         unsafe_allow_html=True
     )
 
-    df["inventory_value"] = df["selling_price"] * df["quantity"]
-
     chart_col1, chart_col2 = st.columns(2, gap="large")
 
     with chart_col1:
-        st.markdown('<div class="chart-card"><div class="chart-title">Value by TCG</div>', unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="metric-card">
+                <div class="metric-label">Portfolio Allocation</div>
+                <div class="metric-value">Value by TCG</div>
+                <div class="metric-text">
+                    Collection value grouped by trading card game.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         value_by_tcg = (
             df.groupby("tcg")["inventory_value"]
@@ -258,13 +265,23 @@ try:
 
         st.bar_chart(
             value_by_tcg,
-            use_container_width=True
+            use_container_width=True,
+            height=360
         )
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
     with chart_col2:
-        st.markdown('<div class="chart-card"><div class="chart-title">Units by TCG</div>', unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="metric-card">
+                <div class="metric-label">Inventory Allocation</div>
+                <div class="metric-value">Units by TCG</div>
+                <div class="metric-text">
+                    Total inventory units grouped by trading card game.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         quantity_by_tcg = (
             df.groupby("tcg")["quantity"]
@@ -274,26 +291,22 @@ try:
 
         st.bar_chart(
             quantity_by_tcg,
-            use_container_width=True
+            use_container_width=True,
+            height=360
         )
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">Top Holdings</div>',
+        unsafe_allow_html=True
+    )
 
-    st.markdown('<div class="section-title">Top Holdings</div>', unsafe_allow_html=True)
     st.markdown(
         '<div class="section-text">Highest value records in the current inventory.</div>',
         unsafe_allow_html=True
     )
 
-    holdings_df = df.copy()
-
-    holdings_df["potential_profit"] = (
-        (holdings_df["selling_price"] - holdings_df["cost"])
-        * holdings_df["quantity"]
-    )
-
     top_holdings = (
-        holdings_df.sort_values(
+        df.sort_values(
             by="inventory_value",
             ascending=False
         )
@@ -341,7 +354,11 @@ try:
         }
     )
 
-    st.markdown('<div class="section-title">Inventory Table</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-title">Inventory Table</div>',
+        unsafe_allow_html=True
+    )
+
     st.markdown(
         f'<div class="section-text">{total_products} products · {total_quantity} total units</div>',
         unsafe_allow_html=True
