@@ -1,3 +1,5 @@
+import re
+
 from langchain.tools import Tool
 from langchain.agents import initialize_agent
 from langchain.agents import AgentType
@@ -8,10 +10,10 @@ from services.inventory_ai import answer_inventory_question
 from services.youtube_rag import ask_video
 from services.sku_generator import generate_sku
 from services.currency_converter import convert_currency
+from services.portfolio_analytics import get_portfolio_summary
 
 
 CURRENT_VIDEO_URL = ""
-
 AGENT_SESSIONS = {}
 
 
@@ -37,16 +39,6 @@ def youtube_tool_func(query):
 
 
 def sku_tool_func(query):
-    """
-    Expected format:
-    PRODUCT NAME | RAW OR GRADING COMPANY | GRADE
-
-    Examples:
-    Mario Pikachu | Raw
-    Charizard | PSA | 10
-    Umbreon VMAX | BGS | 9.5
-    """
-
     parts = [part.strip() for part in query.split("|")]
 
     product_name = parts[0] if len(parts) > 0 else "UNKNOWN"
@@ -63,16 +55,6 @@ def sku_tool_func(query):
 
 
 def currency_tool_func(query):
-    """
-    Expected format:
-    AMOUNT | FROM CURRENCY | TO CURRENCY
-
-    Examples:
-    5000 | EUR | AED
-    430000 | JPY | AED
-    1000 | USD | EUR
-    """
-
     parts = [part.strip() for part in query.split("|")]
 
     if len(parts) != 3:
@@ -81,7 +63,7 @@ def currency_tool_func(query):
             "Use: AMOUNT | FROM CURRENCY | TO CURRENCY"
         )
 
-    amount = parts[0]
+    amount = parts[0].replace(",", "")
     from_currency = parts[1]
     to_currency = parts[2]
 
@@ -105,16 +87,23 @@ def currency_tool_func(query):
         return f"Currency conversion failed: {str(error)}"
 
 
+def portfolio_tool_func(query):
+    return get_portfolio_summary()
+
+
 inventory_tool = Tool(
     name="Inventory Search",
     func=inventory_tool_func,
     description="""
-    Use this tool for questions about inventory, cards, stock,
-    quantities, prices, costs, selling prices, SKUs,
+    Use this tool for specific inventory questions about individual cards,
+    products, SKUs, stock, quantities, prices, costs, selling prices,
     collections, profit or margins.
 
+    Do NOT use this tool for total portfolio value calculations.
+    Use Portfolio Analytics for total collection value, total cost,
+    total profit or portfolio margin.
+
     Never invent inventory data.
-    Always use this tool when the user asks about existing inventory.
     """
 )
 
@@ -123,8 +112,8 @@ youtube_tool = Tool(
     name="YouTube Knowledge",
     func=youtube_tool_func,
     description="""
-    Use this tool when the user asks about the currently
-    processed YouTube video, transcript or video content.
+    Use this tool when the user asks about the currently processed
+    YouTube video, transcript or video content.
     """
 )
 
@@ -163,12 +152,6 @@ currency_tool = Tool(
 
     NEVER estimate currency conversions using the language model.
 
-    Use this tool whenever the user mentions:
-    - converting currencies
-    - exchange rates
-    - monetary values in different currencies
-    - EUR, AED, USD, JPY, GBP or other currency codes
-
     The tool input MUST use this exact format:
 
     AMOUNT | FROM CURRENCY | TO CURRENCY
@@ -177,7 +160,29 @@ currency_tool = Tool(
 
     5000 | EUR | AED
     430000 | JPY | AED
-    1000 | USD | EUR
+    449260 | AED | EUR
+    """
+)
+
+
+portfolio_tool = Tool(
+    name="Portfolio Analytics",
+    func=portfolio_tool_func,
+    description="""
+    ALWAYS use this tool for exact portfolio and collection calculations.
+
+    Use this tool for questions about:
+    - total collection value
+    - portfolio value
+    - how much the collection is worth
+    - total inventory cost
+    - total profit
+    - potential profit
+    - portfolio margin
+    - total margin
+
+    This tool performs deterministic calculations directly from inventory data.
+    It is the source of truth for financial inventory totals.
     """
 )
 
@@ -197,6 +202,7 @@ def create_kizunai_agent():
 
     agent = initialize_agent(
         tools=[
+            portfolio_tool,
             inventory_tool,
             youtube_tool,
             sku_tool,
@@ -214,6 +220,7 @@ You are KizunAI, the AI assistant for Umami Vault.
 You help manage and analyze Trading Card Game inventory,
 answer questions about processed YouTube videos,
 generate inventory SKUs,
+calculate portfolio analytics,
 and convert currencies using live exchange-rate data.
 
 You have access to specialized tools.
@@ -229,14 +236,15 @@ IMPORTANT CONVERSATION RULES:
   "the most expensive one"
   "what about its margin?"
   "and the cheapest?"
-
-- If the user previously asked about Pokémon cards and then asks
-  "which one is the most expensive?", understand that they mean
-  the Pokémon cards discussed previously.
+  "how much is that in EUR?"
+  "convert that to euros"
 
 TOOL SELECTION RULES:
 
-- Use Inventory Search for inventory questions.
+- Use Portfolio Analytics for exact total portfolio calculations.
+
+- Use Inventory Search for specific inventory questions about individual cards,
+  SKUs, products, quantities or prices.
 
 - Use YouTube Knowledge for processed video questions.
 
@@ -244,6 +252,29 @@ TOOL SELECTION RULES:
   create, preview or suggest a SKU.
 
 - Use Currency Converter for every currency conversion request.
+
+PORTFOLIO CALCULATION RULES:
+
+- NEVER calculate total portfolio value yourself.
+
+- NEVER estimate collection value.
+
+- NEVER manually sum inventory prices.
+
+- For total collection value, total portfolio value,
+  total inventory cost, total profit or total margin,
+  ALWAYS use Portfolio Analytics.
+
+- Portfolio Analytics is the source of truth
+  for financial inventory calculations.
+
+- If the user asks to convert the portfolio value
+  to another currency:
+
+  1. Use Portfolio Analytics first.
+  2. Read the exact AED portfolio value.
+  3. Use Currency Converter with that exact value.
+  4. Never modify or approximate the AED amount.
 
 CURRENCY RULES:
 
